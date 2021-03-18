@@ -1,0 +1,3 @@
+flask
+redis
+-e git+https://github.com/Ride2Rail/r2r-offer-utils.git#egg=r2r_offer_utils

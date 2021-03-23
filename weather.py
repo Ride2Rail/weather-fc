@@ -6,7 +6,7 @@ import redis
 # from r2r_offer_utils import normalization
 
 app = Flask(__name__)
-cache = redis.Redis(host='redis', port=6379)
+cache = redis.Redis(host='cache', port=6379)
 
 
 @app.route('/compute', methods=['POST'])
@@ -15,9 +15,8 @@ def extract():
     request_id = data['request_id']
 
     # ask for the entire list of offer ids
-    offer_data = cache.mget('{}:offers'.format(request_id), 0, -1)
-
-    import ipdb; ipdb.set_trace()
+    offer_data = cache.lrange('{}:offers'.format(request_id), 0, -1)
+    # print(offer_data)
 
     response = app.response_class(
         response='{{"request_id": "{}"}}'.format(request_id),

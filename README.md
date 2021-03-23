@@ -15,7 +15,20 @@ $ python3 weather.py
  * Debugger PIN: 441-842-797
 ```
 
-### Local development (debug off
+### Local development with Docker
+
+```bash
+docker run \
+  --rm \
+  -it \
+  --name weather \
+  -p 5000:5000 \
+  --link cache:cache \
+  -e FLASK_ENV='development' \
+  -v "$PWD":/code \
+    r2r/weather-fc:latest
+```
+
 ```bash
 $ FLASK_APP='weather.py' flask run)
  * Serving Flask app "weather.py"

@@ -1,12 +1,46 @@
 #!/usr/bin/env python3
 
-from flask import Flask, request, abort
+import os
+import sys
+import pathlib
+import logging
+import configparser as cp
+
 import redis
+from flask import Flask, request, abort
 
 # from r2r_offer_utils import normalization
 
 app = Flask(__name__)
 cache = redis.Redis(host='cache', port=6379)
+
+##### Config
+service_basename = os.path.splitext(os.path.basename(__file__))[0]
+config_file = '{name}.conf'.format(name=service_basename)
+config = cp.ConfigParser()
+config.read(config_file)
+#####
+
+##### Logging
+# create logger
+logger = logging.getLogger(service_basename)
+logger.setLevel(logging.DEBUG)
+
+# create formatter
+formatter_fh = logging.Formatter('[%(asctime)s][%(levelname)s]: %(message)s')
+formatter_ch = logging.Formatter('[%(asctime)s][%(levelname)s](%(name)s): %(message)s')
+
+default_log = pathlib.Path(config.get('logging', 'default_log'))
+try:
+    default_log.parent.mkdir(parents=True, exist_ok=True)
+    default_log.touch(exist_ok=True)
+
+    basefh = logging.FileHandler(default_log, mode='a+')
+except Exception as err:
+    print("WARNING: could not create log file '{log}'"
+          .format(log=default_log), file=sys.stderr)
+    print("WARNING: {err}".format(err=err), file=sys.stderr)
+#####
 
 
 @app.route('/compute', methods=['POST'])
@@ -30,7 +64,26 @@ def extract():
 
 
 if __name__ == '__main__':
-    import os
+
+    # remove default logger
+    while logger.hasHandlers():
+        logger.removeHandler(logger.handlers[0])
+
+    # create file handler which logs INFO messages
+    fh = logging.FileHandler("{}.log".format(service_basename), mode='a+')
+    fh.setLevel(logging.INFO)
+
+    # create console handler and set level to DEBUG
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # add formatter to ch
+    ch.setFormatter(formatter_ch)
+    fh.setFormatter(formatter_fh)
+
+    # add ch to logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
     FLASK_PORT = 5000
 

@@ -64,6 +64,16 @@ def extract():
 
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--redis-host',
+                        default='localhost',
+                        help='Redis hostname [default: localhost].')
+    parser.add_argument('--redis-port',
+                        default=6379,
+                        type=IntRange(1, 65536),
+                        help='Redis port [default: 6379].')
 
     # remove default logger
     while logger.hasHandlers():

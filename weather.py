@@ -7,6 +7,11 @@ import redis
 from flask import Flask, request
 
 from r2r_offer_utils.logging import setup_logger
+from mapping.cache_operations import extract_data_from_cache
+
+from datetime import datetime
+import geojson
+import numpy as np
 
 
 service_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -31,13 +36,35 @@ def extract():
 
     # ask for the entire list of offer ids
     offer_data = cache.lrange('{}:offers'.format(request_id), 0, -1)
-    # print(offer_data)
+    print(offer_data)
 
     response = app.response_class(
         response=f'{{"request_id": "{request_id}"}}',
         status=200,
         mimetype='application/json'
     )
+
+    output_offer_level, output_tripleg_level = extract_data_from_cache(pa_cache=cache, pa_request_id=request_id,
+                                                                       pa_offer_level_items=[],
+                                                                       pa_tripleg_level_items=['start_time', 'end_time',
+                                                                                               'leg_stops'])
+    if 'offer_ids' in output_offer_level.keys():
+        for offer in output_offer_level['offer_ids']:
+            if 'triplegs' in output_tripleg_level[offer].keys():
+                for leg in output_tripleg_level[offer]['triplegs']:
+                    # time
+                    start_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['start_time'])
+                    end_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['end_time'])
+                    leg_time = start_time + (end_time-start_time)/2
+                    print(leg_time.isoformat())
+
+                    # location
+                    track = geojson.loads(output_tripleg_level[offer][leg]['leg_stops'])
+                    start_coordinates = np.array(track['coordinates'][0])
+                    end_coordinates = np.array(track['coordinates'][-1])
+                    print(start_coordinates, end_coordinates)
+                    leg_coordinates = (end_coordinates + start_coordinates) / 2
+                    print(leg_coordinates)
 
     # normalization.zscore(...)
 

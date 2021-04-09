@@ -57,56 +57,59 @@ def extract():
     if 'offer_ids' in output_offer_level.keys():
         for offer in output_offer_level['offer_ids']:
             if 'triplegs' in output_tripleg_level[offer].keys():
-                for leg in output_tripleg_level[offer]['triplegs']:
-                    # time
-                    start_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['start_time'])
-                    end_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['end_time'])
-                    leg_time = start_time + (end_time - start_time) / 2
-                    print(leg_time.isoformat())
-                    # current_time = datetime.now()
-                    current_time = datetime.fromisoformat('2019-05-25T12:31:00')
+                num_legs = len(output_tripleg_level[offer]['triplegs'])
+                leg = output_tripleg_level[offer]['triplegs'][(num_legs - 1) // 2]
+                print(leg)
+                # for leg in output_tripleg_level[offer]['triplegs']:
+                # time
+                start_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['start_time'])
+                end_time = datetime.fromisoformat(output_tripleg_level[offer][leg]['end_time'])
+                leg_time = start_time + (end_time - start_time) / 2
+                print(leg_time.isoformat())
+                # current_time = datetime.now()
+                current_time = datetime.fromisoformat('2019-09-20T12:31:00')
 
-                    # location
-                    track = geojson.loads(output_tripleg_level[offer][leg]['leg_stops'])
-                    start_coordinates = np.array(track['coordinates'][0])
-                    end_coordinates = np.array(track['coordinates'][-1])
-                    # print(start_coordinates, end_coordinates)
-                    leg_coordinates = (end_coordinates + start_coordinates) / 2
-                    print(leg_coordinates[0], leg_coordinates[1])
+                # location
+                track = geojson.loads(output_tripleg_level[offer][leg]['leg_stops'])
+                start_coordinates = np.array(track['coordinates'][0])
+                end_coordinates = np.array(track['coordinates'][-1])
+                # print(start_coordinates, end_coordinates)
+                leg_coordinates = (end_coordinates + start_coordinates) / 2
+                print(leg_coordinates[0], leg_coordinates[1])
 
-                    # data from API
-                    url = "https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&appid=%s&exclude=minutely" \
-                          "&units=metric" % (leg_coordinates[0], leg_coordinates[1], api_key)
-                    response_api = requests.get(url).text
-                    data = json.loads(response_api)
+                # data from API
+                url = "https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&appid=%s&exclude=minutely" \
+                      "&units=metric" % (leg_coordinates[0], leg_coordinates[1], api_key)
+                response_api = requests.get(url).text
+                data = json.loads(response_api)
 
-                    # decide to use hourly or daily data
-                    days_until_start_time = (leg_time - current_time).days
-                    seconds_until_start_time = (leg_time - current_time).seconds
-                    hours_until_start_time = days_until_start_time * 24 + seconds_until_start_time // 3600
-                    if hours_until_start_time < 48:
-                        data_trip = data['hourly'][hours_until_start_time]
-                    else:
-                        data_trip = data['daily'][days_until_start_time]
+                # decide to use hourly or daily data
+                days_until_start_time = (leg_time - current_time).days
+                seconds_until_start_time = (leg_time - current_time).seconds
+                hours_until_start_time = days_until_start_time * 24 + seconds_until_start_time // 3600
+                if hours_until_start_time < 48:
+                    data_trip = data['hourly'][hours_until_start_time]
+                else:
+                    data_trip = data['daily'][days_until_start_time]
 
-                    # categorization
-                    cat_temperature, main_temperature = map_temperature_category(data_trip['feels_like'])
-                    cat_clouds, desc_clouds = map_cloud_category(data_trip['clouds'])
-                    cat_precipitation, main_precipitation = map_precipitation_category(check_rain_snow(data_trip))
-                    cat_wind, desc_wind, num_wind = map_wind_category(data_trip['wind_speed'])
+                # categorization
+                cat_temperature, main_temperature = map_temperature_category(data_trip['feels_like'])
+                cat_clouds, desc_clouds = map_cloud_category(data_trip['clouds'])
+                cat_precipitation, main_precipitation = map_precipitation_category(check_rain_snow(data_trip))
+                cat_wind, desc_wind, num_wind = map_wind_category(data_trip['wind_speed'])
 
-                    match_clouds = match_scenarios("clouds", cat_clouds)
-                    match_precipitation = match_scenarios("precipitation", cat_precipitation)
-                    match_wind = match_scenarios("wind", cat_wind)
-                    match_temperature = match_scenarios("temperature", cat_temperature)
+                # match_clouds = match_scenarios("clouds", cat_clouds)
+                # match_precipitation = match_scenarios("precipitation", cat_precipitation)
+                # match_wind = match_scenarios("wind", cat_wind)
+                # match_temperature = match_scenarios("temperature", cat_temperature)
 
-                    # print(match_clouds)
-                    # print(match_precipitation)
-                    # print(match_wind)
-                    # print(match_temperature)
+                # print(match_clouds)
+                # print(match_precipitation)
+                # print(match_wind)
+                # print(match_temperature)
 
-                    categories = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
-                    print(categories)
+                categories = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
+                print(categories)
 
     # normalization.zscore(...)
 

@@ -53,7 +53,7 @@ for t in temperature_ranges:
 # https://openweathermap.org/weather-conditions
 weather_scenarios_clouds = {'clear sky': {'category': 'clear sky',
                                           'main': 'clear',
-                                          'range': [0.0, 10.0]
+                                          'range': [0.0, 11.0]
                                           },
                             'few clouds': {'category': 'partially cloudy',
                                            'main': 'clear',

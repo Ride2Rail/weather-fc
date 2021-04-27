@@ -380,3 +380,24 @@ def map_weather_scenarios(clouds, precipitation, wind, temperature):
         scenario = sorted(match_scenario)
 
     return scenario
+
+
+# EXTREME CONDITIONS
+extreme_scenarios = ['uncomfortable temperature', 'rainy/snowy', 'windy']
+
+
+def extreme_condition(trip_scenarios):
+    trip_extreme_conditions = []
+    for scenario in trip_scenarios:
+        if scenario in extreme_scenarios:
+            trip_extreme_conditions.append(scenario)
+    return trip_extreme_conditions
+
+
+def probability_delay(conditions):
+    if len(conditions) == 0:
+        return 0
+    elif len(conditions) == 1:
+        return 0.3
+    elif len(conditions) > 1:
+        return 0.6

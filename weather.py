@@ -108,8 +108,12 @@ def extract():
                 # print(match_wind)
                 # print(match_temperature)
 
-                categories = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
-                print(categories)
+                trip_scenarios = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
+                print(trip_scenarios)
+
+                trip_extreme_conditions = extreme_condition(trip_scenarios)
+                prob_delay = probability_delay(trip_extreme_conditions)
+                print(prob_delay)
 
     # normalization.zscore(...)
 

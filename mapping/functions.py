@@ -2,6 +2,7 @@
 
 import bisect
 from collections import OrderedDict
+import reverse_geocode
 
 # DICTIONARIES
 
@@ -398,6 +399,14 @@ def probability_delay(conditions):
     if len(conditions) == 0:
         return 0
     elif len(conditions) == 1:
-        return 0.3
-    elif len(conditions) > 1:
-        return 0.6
+        return 0.16667
+    elif len(conditions) == 2:
+        return 0.33333
+    elif len(conditions) == 3:
+        return 0.5
+
+
+def get_city(lat, lon):
+    location = reverse_geocode.search([(lat, lon)])
+    city = location[0]['city']
+    return city

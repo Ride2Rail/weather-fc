@@ -77,14 +77,13 @@ def extract():
     # current_time = datetime.now()
     current_time = datetime.fromisoformat('2019-09-20T12:31:00')
     for elements in cities_day.items():
-        # get offer_id and leg_id
+        # get offer_id and leg_id of just the first element of each city and date
         offer_key = elements[1][0]
         offer_id = offer_key[0]
         leg_id = offer_key[1]
 
         # time
-        leg_time = datetime.fromisoformat(elements[0].split(',')[1])
-        print(leg_time)
+        leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
 
         # location
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
@@ -114,10 +113,22 @@ def extract():
         trip_scenarios = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
         print(trip_scenarios)
 
+        # probability of delay
         trip_extreme_conditions = extreme_condition(trip_scenarios)
-        prob_delay.setdefault(elements[0], probability_delay(trip_extreme_conditions))
-    print(prob_delay)
+        city_date_delay = probability_delay(trip_extreme_conditions)
 
+        # probability of each offer
+        for ids in elements[1]:
+            offerid = ids[0]
+            legid = ids[1]
+            prob_delay.setdefault(offerid, {})
+            prob_delay[offerid].setdefault(legid, city_date_delay)
+
+    # get the maximum probability of delay of each offer
+    for offer in prob_delay.items():
+        print(offer[0], offer[1][max(offer[1], key=offer[1].get)])
+
+    # print(prob_delay)
     # normalization.zscore(...)
 
     return response

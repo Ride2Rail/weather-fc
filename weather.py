@@ -7,7 +7,7 @@ import redis
 from flask import Flask, request
 
 from r2r_offer_utils.logging import setup_logger
-from mapping.cache_operations import extract_data_from_cache
+from r2r_offer_utils.cache_operations import extract_data_from_cache
 
 from mapping.functions import *
 
@@ -29,7 +29,8 @@ logger, ch = setup_logger()
 
 # cache
 cache = redis.Redis(host=config.get('cache', 'host'),
-                    port=config.get('cache', 'port'))
+                    port=config.get('cache', 'port'),
+                    decode_responses=True)
 
 # API
 api_key = config.get('openweatherAPI', 'key')

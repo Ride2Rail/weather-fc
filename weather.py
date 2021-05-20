@@ -7,7 +7,8 @@ import redis
 from flask import Flask, request
 
 from r2r_offer_utils.logging import setup_logger
-from r2r_offer_utils.cache_operations import extract_data_from_cache
+from r2r_offer_utils.cache_operations import read_data_from_cache_wrapper
+from r2r_offer_utils.normalization import zscore
 
 from mapping.functions import *
 
@@ -51,10 +52,11 @@ def extract():
         mimetype='application/json'
     )
 
-    output_offer_level, output_tripleg_level = extract_data_from_cache(pa_cache=cache, pa_request_id=request_id,
-                                                                       pa_offer_level_items=[],
-                                                                       pa_tripleg_level_items=['start_time', 'end_time',
-                                                                                               'leg_stops'])
+    output_offer_level, output_tripleg_level = read_data_from_cache_wrapper(pa_cache=cache, pa_request_id=request_id,
+                                                                            pa_offer_level_items=[],
+                                                                            pa_tripleg_level_items=['start_time',
+                                                                                                    'end_time',
+                                                                                                    'leg_stops'])
 
     # number of cities
     cities_day = dict()
@@ -125,12 +127,16 @@ def extract():
             prob_delay.setdefault(offerid, {})
             prob_delay[offerid].setdefault(legid, city_date_delay)
 
-    # get the maximum probability of delay of each offer
+    # aggregation over legs: get the maximum probability of delay of each offer
+    prob_delay_offer = dict()
     for offer in prob_delay.items():
-        print(offer[0], offer[1][max(offer[1], key=offer[1].get)])
+        prob_delay_offer.setdefault(offer[0], offer[1][max(offer[1], key=offer[1].get)])
+        # print(offer[0], offer[1][max(offer[1], key=offer[1].get)])
+    print(prob_delay_offer)
 
-    # print(prob_delay)
-    # normalization.zscore(...)
+    # normalization
+    prob_delay_offer_normalized = zscore(prob_delay_offer, flipped=True)
+    print(prob_delay_offer_normalized)
 
     return response
 

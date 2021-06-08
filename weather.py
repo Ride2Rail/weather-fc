@@ -7,8 +7,8 @@ import redis
 from flask import Flask, request
 
 from r2r_offer_utils.logging import setup_logger
-from r2r_offer_utils.cache_operations import read_data_from_cache_wrapper
-from r2r_offer_utils.normalization import zscore
+from r2r_offer_utils.cache_operations import read_data_from_cache_wrapper, store_simple_data_to_cache_wrapper
+from r2r_offer_utils.normalization import zscore, minmaxscore
 
 from mapping.functions import *
 
@@ -35,6 +35,7 @@ cache = redis.Redis(host=config.get('cache', 'host'),
 
 # API
 api_key = config.get('openweatherAPI', 'key')
+score = config.get('running', 'scores')
 
 
 @app.route('/compute', methods=['POST'])
@@ -44,7 +45,7 @@ def extract():
 
     # ask for the entire list of offer ids
     offer_data = cache.lrange('{}:offers'.format(request_id), 0, -1)
-    print(offer_data)
+    # print(offer_data)
 
     response = app.response_class(
         response=f'{{"request_id": "{request_id}"}}',
@@ -74,7 +75,7 @@ def extract():
                     dict_key = '{city},{date}'.format(city=city_name, date=date)
                     cities_day.setdefault(dict_key, [])
                     cities_day[dict_key].append([offer_id, leg_id])
-    print(cities_day)
+    # print(cities_day)
 
     prob_delay = dict()
     # current_time = datetime.now()
@@ -132,11 +133,19 @@ def extract():
     for offer in prob_delay.items():
         prob_delay_offer.setdefault(offer[0], offer[1][max(offer[1], key=offer[1].get)])
         # print(offer[0], offer[1][max(offer[1], key=offer[1].get)])
-    print(prob_delay_offer)
+    # print(prob_delay_offer)
 
     # normalization
-    prob_delay_offer_normalized = zscore(prob_delay_offer, flipped=True)
+    if score == 'z_score':
+        prob_delay_offer_normalized = zscore(prob_delay_offer, flipped=True)
+    else:
+        prob_delay_offer_normalized = minmaxscore(prob_delay_offer, flipped=True)
     print(prob_delay_offer_normalized)
+
+    try:
+        store_simple_data_to_cache_wrapper(cache, request_id, prob_delay_offer_normalized, 'weather')
+    except redis.exceptions.ConnectionError as exc:
+        logging.debug("Writing outputs to cache by weather-fc feature collector failed.")
 
     return response
 

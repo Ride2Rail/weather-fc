@@ -3,6 +3,8 @@ FROM python:3.8
 ENV APP_NAME=weather.py
 
 COPY "$APP_NAME" /code/"$APP_NAME"
+COPY weather.conf /code/weather.conf
+COPY /mapping/functions.py /code/mapping/functions.py
 
 WORKDIR /code
 

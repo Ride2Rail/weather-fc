@@ -79,7 +79,7 @@ def extract():
 
     prob_delay = dict()
     # current_time = datetime.now()
-    current_time = datetime.fromisoformat('2019-09-20T12:31:00')
+    current_time = datetime(2019, 9, 20)
     for elements in cities_day.items():
         # get offer_id and leg_id of just the first element of each city and date
         offer_key = elements[1][0]
@@ -87,7 +87,8 @@ def extract():
         leg_id = offer_key[1]
 
         # time
-        leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
+        # leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
+        leg_time = datetime.strptime(output_tripleg_level[offer_id][leg_id]['start_time'], '%Y-%m-%dT%H:%M:%S')
 
         # location
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
@@ -100,9 +101,8 @@ def extract():
         data = json.loads(response_api)
 
         # decide to use hourly or daily data
-        days_until_start_time = (leg_time - current_time).days
-        seconds_until_start_time = (leg_time - current_time).seconds
-        hours_until_start_time = days_until_start_time * 24 + seconds_until_start_time // 3600
+        days_until_start_time = int((leg_time - current_time).total_seconds()//86400)
+        hours_until_start_time = int((leg_time - current_time).total_seconds()//3600)
         if hours_until_start_time < 48:
             data_trip = data['hourly'][hours_until_start_time]
         else:

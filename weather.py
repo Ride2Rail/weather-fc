@@ -59,7 +59,7 @@ def extract():
                                                                                                     'end_time',
                                                                                                     'leg_stops'])
 
-    # number of cities
+    # save in a dict the offers. The keys are the different city-date pairs
     cities_day = dict()
     if 'offer_ids' in output_offer_level.keys():
         for offer_id in output_offer_level['offer_ids']:
@@ -79,7 +79,7 @@ def extract():
 
     prob_delay = dict()
     # current_time = datetime.now()
-    current_time = datetime.fromisoformat('2019-09-20 00:05:00+00:00')
+    current_time = datetime.fromisoformat('2021-05-18 00:05:00+00:00')
     # current_time = datetime.replace(current_time, tzinfo=None)
     for elements in cities_day.items():
         # get offer_id and leg_id of just the first element of each city and date
@@ -89,7 +89,6 @@ def extract():
 
         # time
         leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
-        # leg_time = datetime.strptime(output_tripleg_level[offer_id][leg_id]['start_time'], '%Y-%m-%dT%H:%M:%S')
 
         # location
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
@@ -104,10 +103,14 @@ def extract():
         # decide to use hourly or daily data
         days_until_start_time = int((leg_time - current_time).total_seconds()//86400)
         hours_until_start_time = int((leg_time - current_time).total_seconds()//3600)
-        if hours_until_start_time < 48:
-            data_trip = data['hourly'][hours_until_start_time]
-        else:
-            data_trip = data['daily'][days_until_start_time]
+        try:
+            if hours_until_start_time < 48:
+                data_trip = data['hourly'][hours_until_start_time]
+            else:
+                data_trip = data['daily'][days_until_start_time]
+        except IndexError as e:
+            logger.debug("Date provided is not within the first 7 days. Taking current time")
+            data_trip = data['hourly'][0]
 
         # categorization
         cat_temperature, main_temperature = map_temperature_category(data_trip['feels_like'])
@@ -133,7 +136,6 @@ def extract():
     prob_delay_offer = dict()
     for offer in prob_delay.items():
         prob_delay_offer.setdefault(offer[0], offer[1][max(offer[1], key=offer[1].get)])
-        # print(offer[0], offer[1][max(offer[1], key=offer[1].get)])
     # print(prob_delay_offer)
 
     # normalization
@@ -146,7 +148,7 @@ def extract():
     try:
         store_simple_data_to_cache_wrapper(cache, request_id, prob_delay_offer_normalized, 'weather')
     except redis.exceptions.ConnectionError as exc:
-        logging.debug("Writing outputs to cache by weather-fc feature collector failed.")
+        logger.debug("Writing outputs to cache by weather-fc feature collector failed.")
 
     return response
 

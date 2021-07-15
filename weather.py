@@ -70,7 +70,14 @@ def extract():
                     leg_start_coordinates = np.array(track['coordinates'][0])
                     city_name = get_city(leg_start_coordinates[0], leg_start_coordinates[1])
                     # date
-                    leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
+                    leg_time_string = output_tripleg_level[offer_id][leg_id]["start_time"]
+                    try:
+                        leg_time = datetime.fromisoformat(leg_time_string)
+                    except ValueError:
+                        # this is to handle an error in the formatting of the time string in some TRIAS files
+                        leg_time_string = leg_time_string[:leg_time_string.index('+')] + '0' + leg_time_string[leg_time_string.index('+'):]
+                        leg_time = datetime.fromisoformat(leg_time_string)
+                    
                     date = str(leg_time.date())
                     dict_key = '{city},{date}'.format(city=city_name, date=date)
                     cities_day.setdefault(dict_key, [])
@@ -88,7 +95,13 @@ def extract():
         leg_id = offer_key[1]
 
         # time
-        leg_time = datetime.fromisoformat(output_tripleg_level[offer_id][leg_id]['start_time'])
+        leg_time_string = output_tripleg_level[offer_id][leg_id]["start_time"]
+        try:
+            leg_time = datetime.fromisoformat(leg_time_string)
+        except ValueError:
+            # this is to handle an error in the formatting of the time string in some TRIAS files
+            leg_time_string = leg_time_string[:leg_time_string.index('+')] + '0' + leg_time_string[leg_time_string.index('+'):]
+            leg_time = datetime.fromisoformat(leg_time_string)
 
         # location
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
@@ -99,6 +112,9 @@ def extract():
               "&units=metric" % (leg_coordinates[0], leg_coordinates[1], api_key)
         response_api = requests.get(url).text
         data = json.loads(response_api)
+
+        logger.info(f'Current time: {current_time}')
+        logger.info(f'Leg time: {leg_time}')
 
         # decide to use hourly or daily data
         days_until_start_time = int((leg_time - current_time).total_seconds()//86400)
@@ -119,7 +135,7 @@ def extract():
         cat_wind, desc_wind, num_wind = map_wind_category(data_trip['wind_speed'])
 
         trip_scenarios = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
-        print(trip_scenarios)
+        # print(trip_scenarios)
 
         # probability of delay
         trip_extreme_conditions = extreme_condition(trip_scenarios)
@@ -143,7 +159,7 @@ def extract():
         prob_delay_offer_normalized = zscore(prob_delay_offer, flipped=True)
     else:
         prob_delay_offer_normalized = minmaxscore(prob_delay_offer, flipped=True)
-    print(prob_delay_offer_normalized)
+    # print(prob_delay_offer_normalized)
 
     try:
         store_simple_data_to_cache_wrapper(cache, request_id, prob_delay_offer_normalized, 'weather')

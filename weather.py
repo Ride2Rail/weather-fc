@@ -12,7 +12,7 @@ from r2r_offer_utils.normalization import zscore, minmaxscore
 
 from mapping.functions import *
 
-from datetime import datetime
+from datetime import datetime, timezone
 import geojson
 import numpy as np
 import json
@@ -58,7 +58,7 @@ def extract():
                                                                             pa_tripleg_level_items=['start_time',
                                                                                                     'end_time',
                                                                                                     'leg_stops'])
-
+                                                                                                    
     # save in a dict the offers. The keys are the different city-date pairs
     cities_day = dict()
     if 'offer_ids' in output_offer_level.keys():
@@ -84,10 +84,14 @@ def extract():
                     cities_day[dict_key].append([offer_id, leg_id])
     # print(cities_day)
 
+    # get the time zone from one of the leg_times, or else default it to UTC
+    try:
+        time_zone = leg_time.tzinfo
+    except:
+        time_zone = timezone.utc
+    current_time = datetime.now(tz=time_zone)
+
     prob_delay = dict()
-    # current_time = datetime.now()
-    current_time = datetime.fromisoformat('2021-05-18 00:05:00+00:00')
-    # current_time = datetime.replace(current_time, tzinfo=None)
     for elements in cities_day.items():
         # get offer_id and leg_id of just the first element of each city and date
         offer_key = elements[1][0]
@@ -107,26 +111,16 @@ def extract():
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
         leg_coordinates = np.array(track['coordinates'][0])
 
-        # data from API
-        url = "https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&appid=%s&exclude=minutely" \
-              "&units=metric" % (leg_coordinates[0], leg_coordinates[1], api_key)
-        response_api = requests.get(url).text
-        data = json.loads(response_api)
-
         logger.info(f'Current time: {current_time}')
         logger.info(f'Leg time: {leg_time}')
-
-        # decide to use hourly or daily data
-        days_until_start_time = int((leg_time - current_time).total_seconds()//86400)
-        hours_until_start_time = int((leg_time - current_time).total_seconds()//3600)
-        try:
-            if hours_until_start_time < 48:
-                data_trip = data['hourly'][hours_until_start_time]
-            else:
-                data_trip = data['daily'][days_until_start_time]
-        except IndexError as e:
-            logger.debug("Date provided is not within the first 7 days. Taking current time")
-            data_trip = data['hourly'][0]
+        data_trip = requests.post(url = 'http://owm_proxy:5000/compute',
+                                  json = {'current_time' : current_time.isoformat(),
+                                          'leg_time' : leg_time.isoformat(),
+                                          'leg_coordinate_x' : leg_coordinates[0],
+                                          'leg_coordinate_y' : leg_coordinates[1],
+                                          'api_key' : api_key},
+                                  headers = {'Content-Type': 'application/json'}).json()
+        logger.info(data_trip)
 
         # categorization
         cat_temperature, main_temperature = map_temperature_category(data_trip['feels_like'])

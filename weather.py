@@ -35,8 +35,9 @@ cache = redis.Redis(host=config.get('cache', 'host'),
 
 # API
 api_key = config.get('openweatherAPI', 'key')
-score = config.get('running', 'scores')
 
+score = config.get('running', 'scores')
+execution_mode = config.get('running', 'mode')
 
 @app.route('/compute', methods=['POST'])
 def extract():
@@ -118,7 +119,8 @@ def extract():
                                           'leg_time' : leg_time.isoformat(),
                                           'leg_coordinate_x' : leg_coordinates[0],
                                           'leg_coordinate_y' : leg_coordinates[1],
-                                          'api_key' : api_key},
+                                          'api_key' : api_key,
+                                          'execution_mode' : execution_mode},
                                   headers = {'Content-Type': 'application/json'}).json()
         logger.info(data_trip)
 

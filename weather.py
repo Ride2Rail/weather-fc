@@ -58,8 +58,7 @@ def extract():
                                                                             pa_offer_level_items=[],
                                                                             pa_tripleg_level_items=['start_time',
                                                                                                     'end_time',
-                                                                                                    'leg_stops'])
-                                                                                                    
+                                                                                                    'leg_stops'])                                                                                         
     # save in a dict the offers. The keys are the different city-date pairs
     cities_day = dict()
     if 'offer_ids' in output_offer_level.keys():
@@ -83,7 +82,6 @@ def extract():
                     dict_key = '{city},{date}'.format(city=city_name, date=date)
                     cities_day.setdefault(dict_key, [])
                     cities_day[dict_key].append([offer_id, leg_id])
-    # print(cities_day)
 
     # get the time zone from one of the leg_times, or else default it to UTC
     try:

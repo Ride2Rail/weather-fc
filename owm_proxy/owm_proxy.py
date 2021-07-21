@@ -24,7 +24,6 @@ logger.setLevel(logging.INFO)
 def handle_date():
 
     data_from_weather_fc = request.get_json()
-    print(data_from_weather_fc, flush=True)
 
     current_time = datetime.fromisoformat(data_from_weather_fc['current_time'])
     leg_time = datetime.fromisoformat(data_from_weather_fc['leg_time'])
@@ -74,11 +73,7 @@ def handle_date():
     data = json.loads(response_api)
 
     if hours_until_start_time < 0:
-        #if 'current' in data:
         data_trip = data['current']
-        #else:
-        #    logger.info("Date provided is not within the last 5 days (in the past). Weather data is not available.")
-        #    raise Exception
     else:
     # this is the case, theoretically possible, in which a user sends a request for a time in the past
         #try:
@@ -86,9 +81,7 @@ def handle_date():
             data_trip = data['hourly'][hours_until_start_time]
         else:
             data_trip = data['daily'][days_until_start_time]
-        #except IndexError as e:
-        #    logger.info("Date provided is not within the next 7 days (in the future). Weather data is not available.")
-        #    raise Exception
+
     
     if type(data_trip['feels_like']) is dict:
         if leg_time.hour >= 6 and leg_time.hour < 12:

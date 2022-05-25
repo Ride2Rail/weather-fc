@@ -35,10 +35,6 @@ def handle_date():
     # decide to use hourly or daily data
     days_until_start_time = int((leg_time - current_time).total_seconds()//86400)
     hours_until_start_time = int((leg_time - current_time).total_seconds()//3600)
-    logger.info(f'Current time: {current_time}')
-    logger.info(f'Leg time: {leg_time}')
-    logger.info(f'Days until start time: {days_until_start_time}')
-    logger.info(f'Hours until start time: {hours_until_start_time}')
 
     logger.info(f'Execution mode: {execution_mode}')
     if execution_mode == 'TEST' and (days_until_start_time > 7 or days_until_start_time < -5):

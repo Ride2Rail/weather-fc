@@ -46,7 +46,6 @@ def extract():
 
     # ask for the entire list of offer ids
     offer_data = cache.lrange('{}:offers'.format(request_id), 0, -1)
-    # print(offer_data)
 
     response = app.response_class(
         response=f'{{"request_id": "{request_id}"}}',
@@ -110,8 +109,6 @@ def extract():
         track = geojson.loads(output_tripleg_level[offer_id][leg_id]['leg_stops'])
         leg_coordinates = np.array(track['coordinates'][0])
 
-        logger.info(f'Current time: {current_time}')
-        logger.info(f'Leg time: {leg_time}')
         data_trip = requests.post(url = 'http://owm_proxy:5000/compute',
                                   json = {'current_time' : current_time.isoformat(),
                                           'leg_time' : leg_time.isoformat(),
@@ -129,7 +126,6 @@ def extract():
         cat_wind, desc_wind, num_wind = map_wind_category(data_trip['wind_speed'])
 
         trip_scenarios = map_weather_scenarios(cat_clouds, cat_precipitation, cat_wind, cat_temperature)
-        # print(trip_scenarios)
 
         # probability of delay
         trip_extreme_conditions = extreme_condition(trip_scenarios)
@@ -146,14 +142,12 @@ def extract():
     prob_delay_offer = dict()
     for offer in prob_delay.items():
         prob_delay_offer.setdefault(offer[0], offer[1][max(offer[1], key=offer[1].get)])
-    # print(prob_delay_offer)
 
     # normalization
     if score == 'z_score':
         prob_delay_offer_normalized = zscore(prob_delay_offer, flipped=True)
     else:
         prob_delay_offer_normalized = minmaxscore(prob_delay_offer, flipped=True)
-    # print(prob_delay_offer_normalized)
 
     try:
         store_simple_data_to_cache_wrapper(cache, request_id, prob_delay_offer_normalized, 'weather')
